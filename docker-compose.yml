@@ -1,0 +1,55 @@
+version: "3.0"
+services:
+  app:
+    build:
+        args:
+            user: sammy
+            uid: 1000
+        context: ./
+        dockerfile: Dockerfile
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+        - ./:/var/www
+        - ./docker-compose/php/php.ini:/usr/local/etc/php/conf.d/php.ini
+    networks:
+        - landing
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - 9010:80
+    volumes:
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+    networks:
+      - landing
+
+  db:
+    image: mariadb:10.5.8
+    command: --max_allowed_packet=325058560000
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ckc
+      MYSQL_ROOT_PASSWORD: ckc
+      MYSQL_PASSWORD: ckc
+      MYSQL_USER: ckc
+    networks:
+      - landing
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 100000000
+    ports:
+      - 9090:80
+    networks:
+      - landing
+
+networks:
+  landing:
+    driver: bridge
